@@ -108,6 +108,10 @@ export default {
 @greenGrayColor: rgb(184, 199, 159);
 @redColor: rgb(238, 67, 49);
 
+#my_calendar{
+    padding: 0.8em;
+}
+
 .lxj-highlight{
     span{
         // background-color: aquamarine !important;
@@ -133,9 +137,9 @@ export default {
     border-radius: 20px !important;
     border-style: solid;
     border-width: 2px;
-    width: 90% !important;
-    margin-left: 5% !important;
-    margin-right: 5% !important;
+    // width: 90% !important;
+    // margin-left: 5% !important;
+    // margin-right: 5% !important;
     // border-color:linear-gradient(180deg,@oringeColor,@redColor) !important;
     border-color: @redColor;
     background: linear-gradient(45deg,@redColor,@oringeColor 20%,@oringeColor 80%,@redColor) !important;
