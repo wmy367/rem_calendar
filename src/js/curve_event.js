@@ -2,16 +2,17 @@
 
 class curveEvent{
     constructor(mjson){
-        let attrs = ['date','title','desc','customClass','circle']
+        let attrs = ['date','title','desc','customClass','circle','id']
         for(let a of attrs){
             this[a] = mjson[a]
         }
-
+    
         // if(this.circle==0){
         //     this.origin = true
         // }else{
         //     this.origin = false
         // }
+        // this.customClass = 'lxj-highlight'
     }
 }
 

@@ -1,5 +1,6 @@
 $_api_root_path = File.dirname(__FILE__)
 
+require "date"
 require 'sinatra'
 require 'fileutils'
 require 'rack/ssl'
@@ -7,6 +8,8 @@ require 'rack/ssl-enforcer'
 require 'sass'
 require 'yaml'
 require 'sinatra/log'
+require_relative "./database/user_model.rb"
+require_relative "./database/event_model.rb"
 
 $user_params = YAML::load(File.open(File.join($_api_root_path,"./pass.yml")))
 $user_encrypt = {}
@@ -35,38 +38,64 @@ class LoginScreen < Sinatra::Base
     # end
 
     post "/acklogin" do 
-        unless session['user_name']
-            JSON.generate({status: false,noLogin: true})
+        # puts session
+        # puts session['username']
+        unless session['username']
+            JSON.generate({status: false,login: false,info: 'dont has session'})
         else 
-            unless $user_encrypt.values.include?(session['user_name'])
-                JSON.generate({status: false,noLogin: true})
-            else 
-                JSON.generate({status: true,noLogin: false})
+            obj = User.find_by(remember_token: session['username'])
+            unless obj 
+                JSON.generate({status: false,login: false,info: 'session wrong'})
+            else
+                curr_events = Event.getF40B20(obj.id,Date.today)
+                JSON.generate({status: true,login: true,events: curr_events })
             end
         end
     end
 
     get "/login" do 
-        JSON.generate({status: false,noLogin: true})
+        JSON.generate({status: false,login: false})
     end
   
     post('/login') do
-        if trueYamlUserDirect params['name'],params['nick']
-            $user_encrypt[params['name']] = SecureRandom.urlsafe_base64
-            session['user_name'] = $user_encrypt[params['name']]
+        hash = JSON.parse(request.body.read)
+        obj = User.find_by(name: hash['username'])
 
-            Mylog::log.info params
-            Mylog::log.info session['user_name']
-            # redirect "/"
-            JSON.generate({status: true})
-        else
-            Mylog::log.info "=====ERROR====="
-            Mylog::log.info params
-            # redirect '/login'
-            JSON.generate({status: false})
+        unless obj
+            JSON.generate({status: true,login: false ,info: '没有此用户'})
+        else 
+            if Digest::SHA1.hexdigest(hash['password'].to_s) != obj.password_digest 
+                JSON.generate({status: true,login: false ,info: '密码不正确'})
+            else
+                
+                session['username'] = Digest::SHA1.hexdigest((hash['username'] + rand.to_s).to_s)
+                obj.remember_token = session['username']
+                curr_events = Event.getF40B20(obj.id,Date.today)
+
+                JSON.generate({status: true,login: obj.save ,info: '登陆成功',events: curr_events })
+            end
         end
-        
-        # redirect "/"
+    end
+
+    post "/loginup" do 
+        # puts params['password'] 
+        # puts JSON.parse(request.body.read)
+
+        # create user 
+
+        hash = JSON.parse(request.body.read)
+        new_token = Digest::SHA1.hexdigest((hash['username'] + rand.to_s).to_s)
+        if User.find_by(name: hash['username'])
+            JSON.generate({status: false,info:'创建用户失败,已有同名用户'})
+        else
+            rel = User.create!(name: hash['username'],password_digest: Digest::SHA1.hexdigest(hash['password'].to_s),remember_token: new_token )
+            session['username'] = new_token
+            if rel 
+                JSON.generate({status: true})
+            else
+                JSON.generate({status: false,info:'创建用户失败'})
+            end
+        end
     end
 
 end
@@ -82,7 +111,7 @@ class MyApp < Sinatra::Application
     #                         :expire_after => 2592000, # In seconds
     #                         :secret => settings.session_secret
 
-    # use LoginScreen
+    use LoginScreen
     # use WmyFeedApp::Feed
 
     # set :bind,"127.0.0.1"
@@ -111,7 +140,7 @@ class MyApp < Sinatra::Application
     end
 
     # before do
-    #     unless session['user_name']
+    #     unless session['username']
     #         # halt "Access denied, please <a href='/login'>login</a>."
     #         # redirect '/login'
     #         # halt 402, {'Content-Type' => 'application/json'},JSON.generate({status: false,noLogin: true})
@@ -135,7 +164,54 @@ class MyApp < Sinatra::Application
         # erb :index,:layout => nil
         # haml :index, :format => :html5
         # redirect "/index.html"
+
         erb "",layout: :ele_main,locals:{id_name:"app"}
+    end
+
+    post "/new_event" do 
+        hash = JSON.parse(request.body.read)
+        user = User.find_by(remember_token: session['username'])
+        unless user 
+            JSON.generate({status: false,login: false,info: "请重新登陆"})
+        else
+
+            event = Event.new(title: hash['title'],contect: hash['contect'],eventDate: Date.strptime(hash['eventDate'],"%Y/%m/%d"))
+            event.user = user
+
+            JSON.generate({status: event.save})
+        end
+    end
+
+    post "/edit_event" do 
+        hash = JSON.parse(request.body.read)
+        event = Event.find_by(id: hash['id'])
+        unless event 
+            if event.user.remember_token != session['username']
+                JSON.generate({status: false,login: false,info: "请重新登陆"})
+            else
+                event.title = hash['title']
+                event.contect = hash['contect']
+                event.eventDate = Date.strptime(hash['eventDate'],"%Y/%m/%d")
+
+                JSON.generate({status: event.save})
+            end
+        else
+            JSON.generate({status: false,login: false,info: "不存在此事件"})
+        end
+    end
+
+    post "/del_event" do 
+        hash = JSON.parse(request.body.read)
+        event = Event.find_by(id: hash['id'].to_i)
+        if event 
+            if event.user.remember_token != session['username']
+                JSON.generate({status: false,login: false,info: "请重新登陆"})
+            else
+                JSON.generate({status: event.destroy})
+            end
+        else
+            JSON.generate({status: false,login: false,info: "不存在此事件"})
+        end
     end
 
     # get "/css/feeds.css" do 

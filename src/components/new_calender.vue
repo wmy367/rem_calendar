@@ -2,7 +2,7 @@
     <div class="new-curve">
         <van-form @submit="onSubmit">
             <van-field
-                v-model="username"
+                v-model="title"
                 name="title"
                 label="标题"
                 placeholder="标题"
@@ -31,12 +31,13 @@
 </template>
 <script>
 import {genCurveList} from "./../js/curve_event.js"
+import axios from 'axios'
 export default {
     name: 'newCurve',
     data() {
         return {
-            username: '',
-            password: '',
+            title: '',
+            desc: '',
         };
     },
     methods: {
@@ -49,8 +50,26 @@ export default {
                 desc: values.desc,
                 customClass:'lxj-highlight'
             })
-
-            this.$emit('updateCurveFunc',newl)
+            let _this = this
+            axios.post("/new_event",{
+                eventDate: dt.toLocaleDateString(), 
+                title: values.title,
+                contect: values.desc
+            }).then(resp => {
+                if(resp && resp.data){
+                    if(resp.data.status){
+                        _this.title = ''
+                        _this.desc = ''
+                        _this.$emit('updateCurveFunc',newl)
+                    }else{
+                        this.$toast.fail("创建失败")
+                    }
+                }
+            }).catch(err => {
+                console.log(err)
+                this.$toast.fail("服务器出错")
+            })
+            
         },
     },
 }
