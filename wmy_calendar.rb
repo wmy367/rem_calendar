@@ -185,7 +185,7 @@ class MyApp < Sinatra::Application
     post "/edit_event" do 
         hash = JSON.parse(request.body.read)
         event = Event.find_by(id: hash['id'])
-        unless event 
+        if event 
             if event.user.remember_token != session['username']
                 JSON.generate({status: false,login: false,info: "请重新登陆"})
             else
