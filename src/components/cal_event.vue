@@ -90,7 +90,7 @@ export default {
                             _this.$emit('updateCurveFunc',newl)
                         }else{
                             if(resp.data.login){
-                                this.$toast.fail("更新失败")
+                                this.$toast.fail("更新失败 "+resp.data.info)
                             }else{
                                 this.$toast.fail(resp.data.info)
                                 _this.$parent.loginQ = true

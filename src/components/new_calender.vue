@@ -62,7 +62,7 @@ export default {
                         _this.desc = ''
                         _this.$emit('updateCurveFunc',newl)
                     }else{
-                        this.$toast.fail("创建失败")
+                        this.$toast.fail("创建失败 "+resp.data.info)
                     }
                 }
             }).catch(err => {

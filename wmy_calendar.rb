@@ -16,7 +16,7 @@ $user_encrypt = {}
 
 class Mylog
     def self.log
-        @logger ||= Sinatra::Log.new(:logger_name => 'ele-note',
+        @logger ||= Sinatra::Log.new(:logger_name => 'clx',
                                     :log_filename => File.join($_api_root_path,'./log/development.log'),
                                     :loglevel => 'INFO',
                                     :enabled => true,
@@ -174,11 +174,15 @@ class MyApp < Sinatra::Application
         unless user 
             JSON.generate({status: false,login: false,info: "请重新登陆"})
         else
+            if hash['eventDate'] && hash['eventDate'] =~ /\d{4,4}\/\d{1,2}\/\d{1,2}/
+                event = Event.new(title: hash['title'],contect: hash['contect'],eventDate: Date.parse(hash['eventDate']))
+                event.user = user
 
-            event = Event.new(title: hash['title'],contect: hash['contect'],eventDate: Date.strptime(hash['eventDate'],"%Y/%m/%d"))
-            event.user = user
-
-            JSON.generate({status: event.save})
+                JSON.generate({status: event.save})
+            else 
+                Mylog::log.error params 
+                JSON.generate({status: false,info: '日期错误'})
+            end
         end
     end
 
@@ -189,11 +193,16 @@ class MyApp < Sinatra::Application
             if event.user.remember_token != session['username']
                 JSON.generate({status: false,login: false,info: "请重新登陆"})
             else
-                event.title = hash['title']
-                event.contect = hash['contect']
-                event.eventDate = Date.strptime(hash['eventDate'],"%Y/%m/%d")
+                if hash['eventDate'] && hash['eventDate'] =~ /\d{4,4}\/\d{1,2}\/\d{1,2}/
+                    event.title = hash['title']
+                    event.contect = hash['contect']
+                    event.eventDate = Date.parse(hash['eventDate'])
 
-                JSON.generate({status: event.save})
+                    JSON.generate({status: event.save})
+                else 
+                    Mylog::log.error params 
+                    JSON.generate({status: false,info: '日期错误'})
+                end
             end
         else
             JSON.generate({status: false,login: false,info: "不存在此事件"})
