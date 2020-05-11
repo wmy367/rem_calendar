@@ -178,8 +178,8 @@ class MyApp < Sinatra::Application
                 event = Event.new(title: hash['title'],contect: hash['contect'],eventDate: Date.parse(hash['eventDate']))
                 event.user = user
                 event.eventType = hash['eventType'] || 'curve'
-
-                JSON.generate({status: event.save})
+                puts hash
+                JSON.generate({status: event.save,event: event.to_vue_data})
             else 
                 Mylog::log.error params 
                 JSON.generate({status: false,info: '日期错误'})

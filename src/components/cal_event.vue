@@ -154,7 +154,8 @@ export default {
                         if(resp.data.status){
                             _this.title = ''
                             _this.desc = ''
-                            _this.$emit('updateCurveFunc',newl)
+                            newl = resp.data.event
+                            _this.$emit('updateCurveX',newl)
                         }else{
                             this.$toast.fail("创建失败")
                         }
