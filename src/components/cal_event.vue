@@ -2,28 +2,36 @@
     <div class="cal-event">
         <div class="head-tap">
             <van-row>
-                <van-col span="5">
+                <van-col span="6"  >
+                    <van-button round type="default" icon="arrow-left"  @click="updateEventDateY">
+                    </van-button>
+                </van-col>
+                <van-col span="12" >
+                    <div class="cal-event-date-bt" :style="cal_event_date_bt_style">
+                        <van-button round type="default" @click="updateEventDate">
+                            <span class="text-important-bol">{{date}} </span>
+                        </van-button>
+                    </div>
+                </van-col>
+                <van-col span="6">
+                    <van-button round type="default" icon="arrow"  @click="updateEventDateT">
+                    </van-button>
+                </van-col>
+            </van-row>
+        </div>
+        <div class="head-tap">
+            <van-row>
+                <van-col span="8">
                     <div class="curve-event-container">
                         <van-checkbox v-model="yesCurve" checked-color="rgb(238, 67, 49)">记忆曲线</van-checkbox>
                     </div>
                 </van-col>
-                <van-col span="12"  >
-                    <div class="cal-event-date-bt" :style="cal_event_date_bt_style">
-                        <van-button round type="default" icon="arrow-left" @click="updateEventDateY">
-                        </van-button>
-                        <van-button round type="default" @click="updateEventDate">
-                            <span class="text-important-bol">{{date}} </span>
-                        </van-button>
-                        <van-button round type="default" icon="arrow" @click="updateEventDateT">
-                        </van-button>
-                    </div>
-                </van-col>
-                <van-col span="4">
+                <van-col span="8">
                     <div class="curve-event-container">
                         <van-checkbox v-model="done" checked-color="rgb(238, 67, 49)" >完成</van-checkbox>
                     </div>
                 </van-col>
-                <van-col span="3">
+                <van-col span="8">
                     <div class="del-event-container" v-if="editQ">
                         <van-button round type="default" @click="delEvent">
                             <span class="text-important">删除</span>
@@ -82,9 +90,9 @@ export default {
     computed:{
         cal_event_date_bt_style(){
             if(this.editQ){
-                return "margin-left: 16%;"
+                return "margin-left: 0%;"
             }else{
-                return "margin-left: 1%;"
+                return "margin-left: 0%;"
             }
         },
     },
