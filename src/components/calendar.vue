@@ -22,7 +22,7 @@
             <van-dialog v-model="newShow" :showConfirmButton='false' closeOnPopstate closeOnClickOverlay :width="ccwidth">
                 <!-- <img src="https://img.yzcdn.cn/vant/apple-3.jpg"> -->
                 <!-- <newCurve v-on:updateCurveFunc="updateCurveFunc"/> -->
-                <calEvent ref="childEvent" v-on:updateCurveFunc="updateCurveFunc" v-on:delEventFunc="delEventFunc" v-on:closeForm="closeForm" />
+                <calEvent ref="childEvent" v-on:updateCurveX="updateCurveX" v-on:updateCurveFunc="updateCurveFunc" v-on:delEventFunc="delEventFunc" v-on:closeForm="closeForm" />
             </van-dialog>
       </div>
       <div v-else :style="loginQ_N" >
@@ -57,23 +57,30 @@ export default {
     },
     data () {
         return {
-            demoEvents: [ {
-                date: '2020/03/18',
-                title: '学习',
-                desc: '英语第一节',
-                customClass: 'lxj-highlight' // Custom classes to an calendar cell
-            },
-            {
-                date: '2020/03/28',
-                title: '金融',
-                desc: '模型',
-                customClass: 'lxj-highlight' // Custom classes to an calendar cell
-            }],
+            // demoEvents: [ {
+            //     id: 1,
+            //     date: '2020/04/18',
+            //     title: '学习',
+            //     desc: '英语第一节',
+            //     eventType: 'curve',
+            //     doneList: {0: true,1: false},
+            //     customClass: 'lxj-highlight' // Custom classes to an calendar cell
+            // },
+            // {
+            //     id:2,
+            //     date: '2020/04/28',
+            //     title: '金融',
+            //     desc: '模型',
+            //     eventType: 'curve',
+            //     doneList: {0: true,1: false},
+            //     customClass: 'lxj-highlight' // Custom classes to an calendar cell
+            // }],
+            demoEvents:[],
             curveEventsList:[],
             newShow: false,
             cwidth: document.documentElement.clientWidth,
             cheight: document.documentElement.clientHeight,
-            loginQ: null,
+            loginQ: false,
             loginUpQ: null,
             editEventQ: null
         }
@@ -95,6 +102,10 @@ export default {
                 _this.$refs.childEvent.desc = ''
                 _this.$refs.childEvent.data = (new Date()).toLocaleDateString()
                 _this.$refs.childEvent.editQ = false
+                _this.$refs.childEvent.eventType = 'curve'
+                _this.$refs.childEvent.circle = 0
+                _this.$refs.childEvent.yesCurve = true
+                _this.$refs.childEvent.done = false
             })
        },
        updateCurveFunc(newl){
@@ -104,15 +115,31 @@ export default {
            this.curveEventsList = this.curveEventsList.concat(newl)
         //    console.log(d.toLocaleDateString())
            this.$EventCalendar.toDate(d.toLocaleDateString())
+           this.chkEventNotDone()
        },
-       delEventFunc(id){
+       updateCurveX(newl){
+           let d = new Date()
+           this.newShow = false
+           
+           this.curveEventsList = this.curveEventsList.concat(genCurveList(newl))
+        //    console.log(d.toLocaleDateString())
+           this.$EventCalendar.toDate(d.toLocaleDateString())
+           this.chkEventNotDone()
+       },
+       delEventFunc(id,noOrigin){
            var newCurveLL = []
            for(let eEle of this.curveEventsList){
                if(eEle.id != id){
                    newCurveLL.push(eEle)
                }
+
+               if(noOrigin && eEle.circle == 0){
+                   newCurveLL.push(eEle)
+                   this.eventType = 'normal'
+               }
            }
            this.curveEventsList = newCurveLL
+           this.chkEventNotDone()
        },
        editEvent(devent){
            this.newShow = true
@@ -126,19 +153,42 @@ export default {
             let _this = this;
 
             let promise = new Promise(function(resolve) {
+                // console.log(_this.$refs)
                 setTimeout(function() {
-                    console.log(_this.$refs)
+                    // console.log(_this.$refs)
                     resolve(devent);
                 }, 300);
             });
 
             promise.then(function(de){
+                // console.log(de);
                 _this.$refs.childEvent.id = de.id 
                 _this.$refs.childEvent.title = de.title
                 _this.$refs.childEvent.desc = de.desc
-                _this.$refs.childEvent.data = de.date
+                _this.$refs.childEvent.date = de.date
                 _this.$refs.childEvent.editQ = true
+                _this.$refs.childEvent.eventType = de.eventType
+                _this.$refs.childEvent.circle = de.circle
+                _this.$refs.childEvent.yesCurve = de.eventType=="curve"
+                _this.$refs.childEvent.done = de.done
             })
+       },
+       // 检查今天以前的没有完成的任务 
+       chkEventNotDone(){
+            // let td = new Date();
+
+            var dateTime = new Date()
+            dateTime=dateTime.setDate(dateTime.getDate()-1)
+            dateTime=new Date(dateTime)
+
+           for(let eEle of this.curveEventsList){
+            //    console.log(eEle.done)
+               if(!eEle.done){
+                   if(dateTime > (new Date(eEle.date))){
+                       eEle.customClass = 'lxj-not-done-highlight'
+                   }
+               }
+           }
        },
        closeForm(){
            this.newShow = false
@@ -164,6 +214,7 @@ export default {
             // console.log(genCurveList(de))
             this.curveEventsList = this.curveEventsList.concat(genCurveList(de))
         }
+
         // this.curveEventsList = []
         // console.log(this.curveEventsList)
 
@@ -172,6 +223,7 @@ export default {
         // }).catch(err => {
         //     console.log(err)
         // })
+
         let _this = this
         axios.post("/acklogin",{}).then(resp => {
             // console.log(resp)
@@ -184,13 +236,16 @@ export default {
                         // console.log(de)
                         de['customClass'] = 'lxj-highlight'
                         _this.curveEventsList = _this.curveEventsList.concat(genCurveList(de))
+                        _this.chkEventNotDone()
                     }
                 }
             }
         }).catch(err => {
+            console.log("无法连接服务器")
             console.log(err)
         })
         
+        this.chkEventNotDone()
     },
     updated(){
         let d = new Date()
@@ -213,7 +268,7 @@ export default {
 @oringeColor :rgb(237, 223, 56);
 @greenGrayColor: rgb(184, 199, 159);
 @redColor: rgb(238, 67, 49);
-
+@ziColor: rgb(55, 238, 49);
 #my_calendar{
     padding: 0.8em;
 }
@@ -224,6 +279,15 @@ export default {
         border-color: @redColor !important;
     }
 }
+
+.lxj-not-done-highlight{
+    span{
+        // background-color: aquamarine !important;
+        border-color: @ziColor !important;
+        z-index: 100;
+    }
+}
+
 .selected-day{
     span{
         background: linear-gradient(45deg,@redColor,@oringeColor) !important;

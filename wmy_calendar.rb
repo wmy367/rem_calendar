@@ -177,6 +177,7 @@ class MyApp < Sinatra::Application
             if hash['eventDate'] && hash['eventDate'] =~ /\d{4,4}\/\d{1,2}\/\d{1,2}/
                 event = Event.new(title: hash['title'],contect: hash['contect'],eventDate: Date.parse(hash['eventDate']))
                 event.user = user
+                event.eventType = hash['eventType'] || 'curve'
 
                 JSON.generate({status: event.save})
             else 
@@ -193,12 +194,32 @@ class MyApp < Sinatra::Application
             if event.user.remember_token != session['username']
                 JSON.generate({status: false,login: false,info: "请重新登陆"})
             else
+                # puts hash
                 if hash['eventDate'] && hash['eventDate'] =~ /\d{4,4}\/\d{1,2}\/\d{1,2}/
                     event.title = hash['title']
                     event.contect = hash['contect']
                     event.eventDate = Date.parse(hash['eventDate'])
+                    
+                    event.eventType ||= 'curve'
+                    if event.doneList
+                        event_done_list = JSON.parse(event.doneList)
+                    else  
+                        event_done_list = {} 
+                    end
 
-                    JSON.generate({status: event.save})
+                    if hash['doneList'].is_a? Hash
+                        event_done_list.merge!(hash['doneList'])
+                    elsif hash['doneList'].is_a? String
+                        event_done_list.merge!( JSON.parse(hash['doneList']) )
+                    end
+
+                    event.doneList = JSON.generate(event_done_list)
+
+                    if hash['eventType']
+                        event.eventType = hash['eventType']
+                    end
+
+                    JSON.generate({status: event.save,event: event.to_vue_data})
                 else 
                     Mylog::log.error params 
                     JSON.generate({status: false,info: '日期错误'})

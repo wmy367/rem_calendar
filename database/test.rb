@@ -14,7 +14,7 @@ def test_create
 end
 
 def test_degist
-    user = User.find_by(name: "First")
+    user = User.find_by(name: "wmy")
     # puts User.encrypt("90909090")
     user.password_digest  = Digest::SHA1.hexdigest('123456'.to_s)
     puts user.to_json
@@ -27,4 +27,4 @@ def test_date
 end
 
 # test_create
-# test_degist
+test_degist

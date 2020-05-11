@@ -20,7 +20,14 @@ class Event < ActiveRecord::Base
     end
 
     def to_vue_data
-        return {title: self.title,date: self.eventDate.strftime("%Y/%m/%d"),desc: self.contect,id: self.id}
+        return {
+            title: self.title,
+            date: self.eventDate.strftime("%Y/%m/%d"),
+            desc: self.contect,
+            id: self.id, 
+            eventType: self.eventType,
+            doneList: self.doneList
+        }
     end
 end
 

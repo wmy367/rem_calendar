@@ -1,16 +1,36 @@
 <template>
     <div class="cal-event">
         <div class="head-tap">
-            <div class="cal-event-date-bt" :style="cal_event_date_bt_style">
-                <van-button round type="default" @click="updateEventDate">
-                    <span class="text-important-bol">{{date}} </span>
-                </van-button>
-            </div>
-            <div class="del-event-container" v-if="editQ">
-                <van-button round type="default" @click="delEvent">
-                    <span class="text-important">删除</span>
-                </van-button>
-            </div>
+            <van-row>
+                <van-col span="5">
+                    <div class="curve-event-container">
+                        <van-checkbox v-model="yesCurve" checked-color="rgb(238, 67, 49)">记忆曲线</van-checkbox>
+                    </div>
+                </van-col>
+                <van-col span="12"  >
+                    <div class="cal-event-date-bt" :style="cal_event_date_bt_style">
+                        <van-button round type="default" icon="arrow-left" @click="updateEventDateY">
+                        </van-button>
+                        <van-button round type="default" @click="updateEventDate">
+                            <span class="text-important-bol">{{date}} </span>
+                        </van-button>
+                        <van-button round type="default" icon="arrow" @click="updateEventDateT">
+                        </van-button>
+                    </div>
+                </van-col>
+                <van-col span="4">
+                    <div class="curve-event-container">
+                        <van-checkbox v-model="done" checked-color="rgb(238, 67, 49)" >完成</van-checkbox>
+                    </div>
+                </van-col>
+                <van-col span="3">
+                    <div class="del-event-container" v-if="editQ">
+                        <van-button round type="default" @click="delEvent">
+                            <span class="text-important">删除</span>
+                        </van-button>
+                    </div>
+                </van-col>
+            </van-row>
         </div>
         <van-form @submit="onSubmit">
             <van-field
@@ -52,21 +72,33 @@ export default {
             desc: '',
             date: (new Date()).toLocaleDateString(),
             id: '',
-            editQ: null
+            circle: 0,
+            editQ: null,
+            eventType: true,
+            yesCurve: true,
+            done: false
         };
     },
     computed:{
         cal_event_date_bt_style(){
             if(this.editQ){
-                return "margin-left: 18%;"
+                return "margin-left: 16%;"
             }else{
                 return "margin-left: 1%;"
             }
-        }
+        },
     },
     methods: {
         onSubmit(values) {
         // console.log('submit', values);
+
+            var dateTime;
+            dateTime = new Date(this.date)
+            dateTime=dateTime.setDate(dateTime.getDate() - this.circle)
+            dateTime=new Date(dateTime)
+            
+
+    
             let dt = new Date()
             let newl = genCurveList({
                 date: dt.toLocaleDateString(),
@@ -75,19 +107,27 @@ export default {
                 customClass:'lxj-highlight'
             })
             let _this = this
+            let doneHash = {}
+            doneHash[this.circle] = _this.done
+
             if(this.editQ){
                 axios.post("/edit_event",{
-                    eventDate: _this.data, 
+                    eventDate: dateTime.toLocaleDateString(), 
                     title: values.title,
                     contect: values.desc,
-                    id: _this.id
+                    id: _this.id,
+                    doneList: doneHash,
+                    eventType: _this.yesCurve ? "curve" : "normal"
                 }).then(resp => {
                     if(resp && resp.data){
                         if(resp.data.status){
                             _this.title = ''
                             _this.desc = ''
+
                             _this.$emit('delEventFunc',_this.id)
-                            _this.$emit('updateCurveFunc',newl)
+                            newl = resp.data.event
+                            // console.log(newl)
+                            _this.$emit('updateCurveX',newl)
                         }else{
                             if(resp.data.login){
                                 this.$toast.fail("更新失败 "+resp.data.info)
@@ -97,15 +137,18 @@ export default {
                             }
                         }
                     }
+                    _this.$emit("closeForm")
                 }).catch(err => {
                     console.log(err)
                     this.$toast.fail("服务器出错")
+                    _this.$emit("closeForm")
                 })
             }else{
                 axios.post("/new_event",{
                     eventDate: dt.toLocaleDateString(), 
                     title: values.title,
-                    contect: values.desc
+                    contect: values.desc,
+                    eventType: _this.yesCurve ? "curve" : "normal"
                 }).then(resp => {
                     if(resp && resp.data){
                         if(resp.data.status){
@@ -124,7 +167,20 @@ export default {
             
         },
         updateEventDate(){
-            this.$toast("暂时不支持修改日期")
+            this.$toast("修改时间请点击两边箭头")
+        },
+        updateEventDateT(){
+            var dateTime;
+            dateTime = new Date(this.date)
+            dateTime=dateTime.setDate(dateTime.getDate()+1)
+            dateTime=new Date(dateTime)
+            this.date = dateTime.toLocaleDateString()
+        },
+         updateEventDateY(){
+            var dateTime = new Date(this.date)
+            dateTime=dateTime.setDate(dateTime.getDate()-1)
+            dateTime=new Date(dateTime)
+            this.date = dateTime.toLocaleDateString()
         },
         delEvent(){
             // this.$toast("删除" + this.id)
@@ -159,8 +215,30 @@ export default {
             //  promise.then(function(){
             //      _this.$parent.newShow = false
             //  })
+        },
+        triCurve(){
+            let _this = this
+            var dateTime = new Date(this.date)
+            console.log(this.date)
+            console.log(this.circle)
+            dateTime=dateTime.setDate(dateTime.getDate()-this.circle)
+            dateTime=new Date(dateTime)
+
+            let newl = genCurveList({
+                date: dateTime.toLocaleDateString(),
+                title: _this.title,
+                desc: _this.desc,
+                customClass:'lxj-highlight',
+                eventType: !_this.yesCurve ? "curve" : "normal"
+            })
+
+            // console.log(_this.id)
+            _this.$emit('delEventFunc',_this.id)
+
+            _this.$emit('updateCurveFunc',newl)
         }
     },
+    
 }
 </script>
 
@@ -195,5 +273,19 @@ export default {
 .head-tap{
     // display: inline;
     width: inherit;
+}
+
+.head-tap-right{
+    margin-right: 5%;
+    // display: inline-block;
+    float: right;
+    width: inherit;
+}
+
+.curve-event-container{
+    margin-top: 9%;
+    // display: inline-block;
+    float: left;
+    font-size: small;
 }
 </style>

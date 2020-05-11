@@ -2,6 +2,8 @@ import Vue from 'vue'
 import App from './App.vue'
 import axios from "axios"
 import {Cell,Calendar,Button,Form,Field,Dialog,Toast,Notify,DatetimePicker} from 'vant'
+import { Checkbox, CheckboxGroup } from 'vant';
+import { Col, Row } from 'vant';
 import 'vue-event-calendar/dist/style.css'
 import vueEventCalendar from 'vue-event-calendar'
 import 'vant/lib/index.css'
@@ -17,6 +19,10 @@ Vue.use(axios)
 Vue.use(Notify)
 Vue.use(Toast)
 Vue.use(DatetimePicker)
+Vue.use(Checkbox);
+Vue.use(CheckboxGroup);
+Vue.use(Col);
+Vue.use(Row);
 // Vue.use(ElementUI)
 
 new Vue({
