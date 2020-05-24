@@ -146,10 +146,12 @@ export default {
                         }
                     }
                     _this.$emit("closeForm")
+                    // _this.$emit("toTargetdayShow",_this.date)
                 }).catch(err => {
                     console.log(err)
                     this.$toast.fail("服务器出错")
                     _this.$emit("closeForm")
+                    // _this.$emit("toTargetdayShow",_this.date)
                 })
             }else{
                 axios.post("/new_event",{
@@ -204,6 +206,7 @@ export default {
                     if(resp.data && resp.data.status){
                         this.$toast.success("删除成功")
                         _this.$emit("closeForm")
+                        // _this.$emit("toTargetdayShow",_this.date)
                         _this.$emit('delEventFunc',_this.id)
                     }else{
                         this.$toast.fail("删除失败")
@@ -213,6 +216,7 @@ export default {
             }).catch(() => {
             //    _this.$parent.newShow = false
                 _this.$emit("closeForm")
+                // _this.$emit("toTargetdayShow",_this.date)
             });
             
             // let promise = new Promise(function(resolve) {

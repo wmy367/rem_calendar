@@ -12,7 +12,10 @@
                     <!-- {{event.desc}} -->
                         <div class="curver-container-wrapper">
                             <h3 class="title show-title" @click="editEvent(event)">{{index}}. {{event.title}}</h3>
-                            <p class="time">{{event.startDate}} 第<span class="text-important">{{event.circle+1}}</span>天</p>
+                            <div class="time right-tap">
+                                {{event.startDate}} 第<span class="text-important">{{event.circle+1}}</span>天
+                                <van-checkbox @click="done_chkbx(event)" class="done-checkbx" v-model="event.done" checked-color="rgb(238, 67, 49)" >完成</van-checkbox>
+                            </div>
                             <p class="desc">{{event.desc}}</p>
                         </div>
                     </div>
@@ -22,7 +25,11 @@
             <van-dialog v-model="newShow" :showConfirmButton='false' closeOnPopstate closeOnClickOverlay :width="ccwidth">
                 <!-- <img src="https://img.yzcdn.cn/vant/apple-3.jpg"> -->
                 <!-- <newCurve v-on:updateCurveFunc="updateCurveFunc"/> -->
-                <calEvent ref="childEvent" v-on:updateCurveX="updateCurveX" v-on:updateCurveFunc="updateCurveFunc" v-on:delEventFunc="delEventFunc" v-on:closeForm="closeForm" />
+                <calEvent ref="childEvent" 
+                v-on:updateCurveX="updateCurveX" 
+                v-on:updateCurveFunc="updateCurveFunc" 
+                v-on:delEventFunc="delEventFunc" 
+                v-on:closeForm="closeForm" />
             </van-dialog>
       </div>
       <div v-else :style="loginQ_N" >
@@ -150,6 +157,7 @@ export default {
         //    this.$refs.childEvent.title = event.title
         //    this.$refs.childEvent.desc = event.desc
         //    this.$refs.childEvent.date = event.date
+            this.$EventCalendar.toDate(devent.date)
             let _this = this;
 
             let promise = new Promise(function(resolve) {
@@ -190,8 +198,83 @@ export default {
                }
            }
        },
+       singleChkEventNotDone(event){
+           var dateTime = new Date()
+            dateTime=dateTime.setDate(dateTime.getDate()-1)
+            dateTime=new Date(dateTime)
+            event.customClass = 'lxj-highlight'
+            if(!event.done){
+                if(dateTime > (new Date(event.date))){
+                    event.customClass = 'lxj-not-done-highlight'
+                }
+            }
+       },
        closeForm(){
            this.newShow = false
+       },
+       toTargetdayShow(dStr){
+            // let d = new Date()
+            console.log(dStr)
+            this.$EventCalendar.toDate(dStr)
+       },
+       done_chkbx(event){
+            // console.log(event)
+            // let copy_event = JSON.parse(JSON.stringify(event)) 
+            let _this = this
+            let promise = new Promise(function(resolve) {
+                // console.log(_this.$refs)
+                setTimeout(function() {
+                    // console.log(_this.$refs)
+                    resolve(event);
+                }, 300);
+            });
+
+            promise.then(function(de){
+                _this.done_chkbx_core(de)
+            })
+       },
+       done_chkbx_core(event){
+            var dateTime;
+            if(event.origin){
+                event.circle = 0
+            }
+            dateTime = new Date(event.date)
+            dateTime=dateTime.setDate(dateTime.getDate() - event.circle)
+            dateTime=new Date(dateTime)
+
+            let doneHash = {}
+            if(event.origin){
+                doneHash[0] = event.done ? true : false
+            }else{
+                doneHash[event.circle] = event.done ? true : false
+            }
+            // console.log(copy_event)
+            // console.log(doneHash)
+
+            let _this = this
+            axios.post("/edit_event",{
+                eventDate: dateTime.toLocaleString(),
+                id: event.id,
+                doneList: doneHash,
+            }).then(resp => {
+                if(resp && resp.data){
+                    if(resp.data.status){
+                         _this.singleChkEventNotDone(event)
+                        if(event.done){
+                            this.$toast.success(event.title + " 完成")
+                        }else{
+                            this.$toast.success(event.title + " 未完成")
+                        }
+                    }else{
+                        if(resp.data.login){
+                            this.$toast.fail("更新失败 "+resp.data.info)
+                        }else{
+                            this.$toast.fail(resp.data.info)
+                            _this.loginQ = true
+                        }
+                    }
+                }
+            })
        }
     },
     computed:{
@@ -316,6 +399,12 @@ export default {
 }
 .text-important{
     color: @redColor;
+}
+.right-tap{
+    display: -webkit-box;
+}
+.done-checkbx{
+    margin-left: 2%;
 }
 
 </style>

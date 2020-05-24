@@ -196,8 +196,8 @@ class MyApp < Sinatra::Application
             else
                 # puts hash
                 if hash['eventDate'] && hash['eventDate'] =~ /\d{4,4}\/\d{1,2}\/\d{1,2}/
-                    event.title = hash['title']
-                    event.contect = hash['contect']
+                    event.title = hash['title'] || event.title
+                    event.contect = hash['contect'] || event.contect
                     event.eventDate = Date.parse(hash['eventDate'])
                     
                     event.eventType ||= 'curve'
@@ -216,7 +216,7 @@ class MyApp < Sinatra::Application
                     event.doneList = JSON.generate(event_done_list)
 
                     if hash['eventType']
-                        event.eventType = hash['eventType']
+                        event.eventType = hash['eventType'] || event.eventType
                     end
 
                     JSON.generate({status: event.save,event: event.to_vue_data})
